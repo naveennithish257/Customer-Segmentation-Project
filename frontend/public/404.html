@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      // GitHub Pages SPA redirect fix
+      // Redirects 404s back to index.html with the path encoded in query string
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1).join('/') +
+        '/?/' + l.pathname.slice(1) + (l.search ? '&' + l.search.slice(1) : '') + l.hash
+      );
+    </script>
+    <title>SegmentIQ — AI Customer Segmentation Dashboard</title>
+  </head>
+  <body>
+    Redirecting...
+  </body>
+</html>

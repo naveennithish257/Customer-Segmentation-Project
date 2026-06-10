@@ -1,6 +1,14 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react'
 import axios from 'axios'
 
+// In production (GitHub Pages), use the Render backend URL injected at build time.
+// In development, use relative /api paths so Vite proxy handles them.
+const API_BASE = (typeof __API_BASE__ !== 'undefined' && __API_BASE__ && !__API_BASE__.includes('localhost'))
+  ? __API_BASE__
+  : ''
+
+const api = (path) => `${API_BASE}${path}`
+
 const AppContext = createContext(null)
 
 export function AppProvider({ children }) {
@@ -20,13 +28,13 @@ export function AppProvider({ children }) {
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const { data } = await axios.get('/api/health')
+        const { data } = await axios.get(api('/api/health'))
         if (data.data_loaded) {
           setDataLoaded(true)
           if (data.info) {
             setUploadInfo(data.info)
           }
-          const kpiRes = await axios.get('/api/kpis')
+          const kpiRes = await axios.get(api('/api/kpis'))
           setKpis(kpiRes.data)
         }
       } catch (err) {
@@ -42,7 +50,7 @@ export function AppProvider({ children }) {
     try {
       const form = new FormData()
       form.append('file', file)
-      const { data } = await axios.post('/api/upload', form, {
+      const { data } = await axios.post(api('/api/upload'), form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       setDataLoaded(true)
@@ -62,7 +70,7 @@ export function AppProvider({ children }) {
     setUploading(true)
     setUploadError(null)
     try {
-      const { data } = await axios.post('/api/load-sample')
+      const { data } = await axios.post(api('/api/load-sample'))
       setDataLoaded(true)
       setKpis(data.kpis)
       setUploadInfo({ rows: data.rows, columns_detected: data.columns_detected })
@@ -77,7 +85,7 @@ export function AppProvider({ children }) {
   }, [])
 
   const clearData = useCallback(async () => {
-    try { await axios.post('/api/clear') } catch (_) {}
+    try { await axios.post(api('/api/clear')) } catch (_) {}
     setDataLoaded(false)
     setKpis(null)
     setUploadInfo(null)

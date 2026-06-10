@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import axios from 'axios'
+import apiClient from '../utils/api'
 import UploadPrompt from '../components/UploadPrompt'
 import FilterPanel from '../components/FilterPanel'
 import AgeDistributionChart from '../components/charts/AgeDistributionChart'
@@ -19,7 +19,7 @@ export default function Analytics() {
   const fetchAnalytics = useCallback(async () => {
     setLoading(true)
     try {
-      const { data } = await axios.get('/api/analytics', { params: filterParams })
+      const { data } = await apiClient.get('/api/analytics', { params: filterParams })
       setAnalytics(data)
     } catch (_) {}
     setLoading(false)

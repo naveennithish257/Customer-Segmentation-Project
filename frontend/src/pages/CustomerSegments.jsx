@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import axios from 'axios'
+import apiClient from '../utils/api'
 import UploadPrompt from '../components/UploadPrompt'
 import ClusterScatterPlot from '../components/charts/ClusterScatterPlot'
 import DataTable from '../components/DataTable'
@@ -33,7 +33,7 @@ export default function CustomerSegments() {
     try {
       const params = { page, per_page: 20, search }
       if (seg) params.segment = seg
-      const { data } = await axios.get('/api/data', { params })
+      const { data } = await apiClient.get('/api/data', { params })
       setTableData(data)
     } catch (_) {}
     setLoading(false)
@@ -41,7 +41,7 @@ export default function CustomerSegments() {
 
   useEffect(() => {
     if (!dataLoaded) return
-    axios.get('/api/segments').then(r => {
+    apiClient.get('/api/segments').then(r => {
       setScatter(r.data.scatter || [])
       setSummary(r.data.summary || [])
     }).catch(() => {})

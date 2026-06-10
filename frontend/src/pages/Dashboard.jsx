@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Users, DollarSign, ShoppingCart, TrendingUp, PieChart, Heart, RefreshCw } from 'lucide-react'
-import axios from 'axios'
+import apiClient from '../utils/api'
 import KPICard from '../components/KPICard'
 import UploadPrompt from '../components/UploadPrompt'
 import { useApp } from '../context/AppContext'
@@ -14,8 +14,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!dataLoaded) return
-    axios.get('/api/analytics').then(r => setAnalytics(r.data)).catch(() => {})
-    axios.get('/api/segments').then(r => setSegSummary(r.data.summary || [])).catch(() => {})
+    apiClient.get('/api/analytics').then(r => setAnalytics(r.data)).catch(() => {})
+    apiClient.get('/api/segments').then(r => setSegSummary(r.data.summary || [])).catch(() => {})
   }, [dataLoaded])
 
   if (!dataLoaded) return <UploadPrompt />

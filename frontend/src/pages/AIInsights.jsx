@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import axios from 'axios'
+import apiClient from '../utils/api'
 import UploadPrompt from '../components/UploadPrompt'
 import { useApp } from '../context/AppContext'
 import { Sparkles, Users, TrendingUp, AlertTriangle, Heart, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react'
@@ -128,7 +128,7 @@ export default function AIInsights() {
   const fetch = async () => {
     setLoading(true)
     try {
-      const { data } = await axios.get('/api/insights')
+      const { data } = await apiClient.get('/api/insights')
       setInsights(data)
     } catch (_) {}
     setLoading(false)

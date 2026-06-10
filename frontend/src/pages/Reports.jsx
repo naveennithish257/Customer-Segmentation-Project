@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import axios from 'axios'
+import apiClient from '../utils/api'
 import UploadPrompt from '../components/UploadPrompt'
 import DataTable from '../components/DataTable'
 import { useApp } from '../context/AppContext'
@@ -15,7 +15,7 @@ export default function Reports() {
   const fetchTable = async (page = 1, search = '') => {
     setLoading(true)
     try {
-      const { data } = await axios.get('/api/data', { params: { page, per_page: 20, search } })
+      const { data } = await apiClient.get('/api/data', { params: { page, per_page: 20, search } })
       setTableData(data)
     } catch (_) {}
     setLoading(false)
@@ -29,7 +29,7 @@ export default function Reports() {
     setExporting(type)
     setExportDone(null)
     try {
-      const res = await axios.get(`/api/export/${type}`, { responseType: 'blob' })
+      const res = await apiClient.get(`/api/export/${type}`, { responseType: 'blob' })
       const contentType = res.headers['content-type'] || ''
       if (contentType.includes('application/json')) {
         const text = await res.data.text()
