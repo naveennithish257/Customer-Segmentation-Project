@@ -56,97 +56,123 @@ export default function UploadPrompt({ compact = false }) {
 
   if (!compact) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 24, padding: '40px 20px' }}>
-        {/* Floating icon */}
-        <div className="animate-float" style={{
-          width: 96, height: 96, borderRadius: 24,
-          background: 'linear-gradient(135deg, rgba(0,212,255,0.15), rgba(124,58,237,0.15))',
-          border: '1px solid rgba(0,212,255,0.2)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        minHeight: '80vh', padding: '24px 32px',
+      }}>
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr',
+          gap: 32, width: '100%', maxWidth: 900,
+          alignItems: 'center',
         }}>
-          <FileSpreadsheet size={42} color="#00d4ff" />
-        </div>
-
-        <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', margin: '0 0 8px' }}>
-            Upload Your Customer Dataset
-          </h2>
-          <p style={{ color: '#64748b', fontSize: 14, margin: 0, maxWidth: 420 }}>
-            Upload a <b>CSV</b>, <b>Excel</b>, <b>JSON</b>, <b>Pickle (.pkl)</b>, or <b>Jupyter Notebook (.ipynb)</b> file containing your customer data. The dashboard will automatically segment and analyse your customers.
-          </p>
-        </div>
-
-        <div
-          {...getRootProps()}
-          className={`upload-zone${isDragActive ? ' dragging' : ''}`}
-          style={{ width: '100%', maxWidth: 480, padding: 40, textAlign: 'center' }}
-        >
-          <input {...getInputProps()} />
-          {uploading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-              <Loader2 size={36} color="#00d4ff" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
-              <div style={{ color: '#00d4ff', fontWeight: 600, fontSize: 14 }}>Processing your data…</div>
-              <div style={{ color: '#475569', fontSize: 12 }}>Running K-Means clustering & analysis</div>
+          {/* Left: Info + Sample button */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{
+              width: 72, height: 72, borderRadius: 20,
+              background: 'linear-gradient(135deg, rgba(0,212,255,0.15), rgba(124,58,237,0.15))',
+              border: '1px solid rgba(0,212,255,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <FileSpreadsheet size={34} color="#00d4ff" />
             </div>
-          ) : (
-            <>
-              <CloudUpload size={40} color={isDragActive ? '#00d4ff' : '#334155'} style={{ marginBottom: 14, transition: 'color 0.2s' }} />
-              <div style={{ color: isDragActive ? '#00d4ff' : '#94a3b8', fontWeight: 600, fontSize: 15, marginBottom: 6 }}>
-                {isDragActive ? 'Drop your file here' : 'Drag & drop your file here'}
+
+            <div>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: '0 0 8px', lineHeight: 1.2 }}>
+                Upload Your Customer Dataset
+              </h2>
+              <p style={{ color: '#64748b', fontSize: 13, margin: 0, lineHeight: 1.6 }}>
+                Drop a <b>CSV</b>, <b>Excel</b>, <b>JSON</b>, <b>Pickle</b>, or <b>Notebook</b> file and the dashboard will auto-segment and analyse your customers using K-Means clustering.
+              </p>
+            </div>
+
+            {/* Supported formats */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {['.csv', '.xlsx', '.xls', '.json', '.pkl', '.ipynb'].map(ext => (
+                <span key={ext} style={{
+                  fontSize: 11, fontWeight: 600, padding: '3px 8px',
+                  background: 'rgba(15,23,42,0.06)', borderRadius: 6, color: '#475569',
+                  border: '1px solid #e2e8f0',
+                }}>{ext}</span>
+              ))}
+            </div>
+
+            {/* Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+              <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500, whiteSpace: 'nowrap' }}>or try with sample data</span>
+              <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+            </div>
+
+            {/* Load Sample button — always visible */}
+            <button
+              id="load-sample-btn"
+              onClick={async () => {
+                setLocalError(null)
+                const result = await loadSample()
+                if (!result.success) setLocalError(result.error)
+              }}
+              disabled={uploading}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                padding: '13px 24px',
+                background: uploading ? '#f1f5f9' : 'linear-gradient(135deg, rgba(0,212,255,0.12), rgba(124,58,237,0.12))',
+                border: '1.5px solid rgba(0,212,255,0.4)',
+                borderRadius: 12, cursor: uploading ? 'not-allowed' : 'pointer',
+                color: '#0284c7', fontWeight: 700, fontSize: 14,
+                transition: 'all 0.2s', opacity: uploading ? 0.6 : 1,
+                width: '100%',
+              }}
+              onMouseEnter={e => { if (!uploading) { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,212,255,0.22), rgba(124,58,237,0.22))'; e.currentTarget.style.borderColor = 'rgba(0,212,255,0.7)' } }}
+              onMouseLeave={e => { if (!uploading) { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,212,255,0.12), rgba(124,58,237,0.12))'; e.currentTarget.style.borderColor = 'rgba(0,212,255,0.4)' } }}
+            >
+              {uploading
+                ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                : <Database size={16} />}
+              Load Sample Dataset (200 customers)
+            </button>
+
+            {err && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '10px 14px',
+                background: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.25)',
+                borderRadius: 10,
+              }}>
+                <AlertCircle size={14} color="#f87171" style={{ flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: '#fca5a5' }}>{err}</span>
               </div>
-              <div style={{ color: '#475569', fontSize: 12, marginBottom: 18 }}>or click to browse</div>
-              <button className="btn-primary" style={{ pointerEvents: 'none' }}>
-                <CloudUpload size={14} />
-                Browse File
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Divider */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', maxWidth: 480 }}>
-          <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
-          <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 500, whiteSpace: 'nowrap' }}>or try the demo</span>
-          <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
-        </div>
-
-        {/* Load sample button */}
-        <button
-          onClick={async () => {
-            setLocalError(null)
-            const result = await loadSample()
-            if (!result.success) setLocalError(result.error)
-          }}
-          disabled={uploading}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '12px 28px',
-            background: uploading ? '#f1f5f9' : 'linear-gradient(135deg, rgba(0,212,255,0.12), rgba(124,58,237,0.12))',
-            border: '1px solid rgba(0,212,255,0.35)',
-            borderRadius: 12, cursor: uploading ? 'not-allowed' : 'pointer',
-            color: '#0284c7', fontWeight: 600, fontSize: 14,
-            transition: 'all 0.2s',
-            opacity: uploading ? 0.6 : 1,
-          }}
-          onMouseEnter={e => { if (!uploading) e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,212,255,0.22), rgba(124,58,237,0.22))' }}
-          onMouseLeave={e => { if (!uploading) e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,212,255,0.12), rgba(124,58,237,0.12))' }}
-        >
-          {uploading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Database size={16} />}
-          Load Sample Dataset (200 customers)
-        </button>
-
-        {err && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '12px 18px',
-            background: 'rgba(239,68,68,0.08)',
-            border: '1px solid rgba(239,68,68,0.25)',
-            borderRadius: 10, maxWidth: 480, width: '100%',
-          }}>
-            <AlertCircle size={16} color="#f87171" style={{ flexShrink: 0 }} />
-            <span style={{ fontSize: 13, color: '#fca5a5' }}>{err}</span>
+            )}
           </div>
-        )}
+
+          {/* Right: Drag-and-drop zone */}
+          <div
+            {...getRootProps()}
+            className={`upload-zone${isDragActive ? ' dragging' : ''}`}
+            style={{ padding: '40px 24px', textAlign: 'center', height: '100%', minHeight: 280, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <input {...getInputProps()} />
+            {uploading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                <Loader2 size={36} color="#00d4ff" style={{ animation: 'spin 1s linear infinite' }} />
+                <div style={{ color: '#00d4ff', fontWeight: 600, fontSize: 14 }}>Processing your data…</div>
+                <div style={{ color: '#475569', fontSize: 12 }}>Running K-Means clustering & analysis</div>
+              </div>
+            ) : (
+              <>
+                <CloudUpload size={44} color={isDragActive ? '#00d4ff' : '#334155'} style={{ marginBottom: 16, transition: 'color 0.2s' }} />
+                <div style={{ color: isDragActive ? '#00d4ff' : '#94a3b8', fontWeight: 600, fontSize: 15, marginBottom: 6 }}>
+                  {isDragActive ? 'Drop your file here' : 'Drag & drop your file here'}
+                </div>
+                <div style={{ color: '#475569', fontSize: 12, marginBottom: 20 }}>or click to browse your files</div>
+                <button className="btn-primary" style={{ pointerEvents: 'none' }}>
+                  <CloudUpload size={14} />
+                  Browse File
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     )
   }
