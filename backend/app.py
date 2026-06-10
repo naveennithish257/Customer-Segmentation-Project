@@ -29,14 +29,22 @@ ALLOWED_EXT = {'csv', 'xlsx', 'xls', 'json', 'pkl', 'pickle', 'ipynb'}
 
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50 MB
 
-# ── In-memory session store (single-user) ────────────────────────────────────
-SESSION: dict = {
-    'df': None,
-    'kpis': None,
-    'col_map': None,
-    'insights': None,
-    'segment_summary': None,
-}
+# ── In-memory session store (multi-user via X-Session-ID) ────────────────────
+SESSIONS: dict = {}
+
+
+def get_session() -> dict:
+    session_id = request.headers.get('X-Session-ID', 'default')
+    if session_id not in SESSIONS:
+        SESSIONS[session_id] = {
+            'df': None,
+            'kpis': None,
+            'col_map': None,
+            'insights': None,
+            'segment_summary': None,
+        }
+    return SESSIONS[session_id]
+
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -66,12 +74,13 @@ def safe_json(data):
 
 @app.route('/api/health', methods=['GET'])
 def health():
-    is_loaded = SESSION['df'] is not None
+    session = get_session()
+    is_loaded = session['df'] is not None
     info = None
     if is_loaded:
         info = {
-            'rows': len(SESSION['df']),
-            'columns_detected': list(SESSION['col_map'].keys()) if SESSION['col_map'] else []
+            'rows': len(session['df']),
+            'columns_detected': list(session['col_map'].keys()) if session['col_map'] else []
         }
     return jsonify({
         'status': 'ok',
@@ -111,11 +120,12 @@ def upload_file():
         insights = generate_insights(df)
 
         # Store in session
-        SESSION['df'] = df
-        SESSION['kpis'] = kpis
-        SESSION['col_map'] = col_map
-        SESSION['insights'] = insights
-        SESSION['segment_summary'] = segment_summary
+        session = get_session()
+        session['df'] = df
+        session['kpis'] = kpis
+        session['col_map'] = col_map
+        session['insights'] = insights
+        session['segment_summary'] = segment_summary
 
         # Build column info
         available_cols = list(col_map.keys())
@@ -138,27 +148,30 @@ def upload_file():
 
 @app.route('/api/kpis', methods=['GET'])
 def get_kpis():
-    if SESSION['df'] is None:
+    session = get_session()
+    if session['df'] is None:
         return jsonify({'error': 'No data loaded. Please upload a file first.'}), 404
-    return jsonify(safe_json(SESSION['kpis']))
+    return jsonify(safe_json(session['kpis']))
 
 
 @app.route('/api/segments', methods=['GET'])
 def get_segments():
-    if SESSION['df'] is None:
+    session = get_session()
+    if session['df'] is None:
         return jsonify({'error': 'No data loaded.'}), 404
-    df = SESSION['df']
+    df = session['df']
     scatter = get_scatter_data(df)
-    summary = SESSION['segment_summary']
+    summary = session['segment_summary']
     return jsonify(safe_json({'scatter': scatter, 'summary': summary}))
 
 
 @app.route('/api/analytics', methods=['GET'])
 def get_analytics():
-    if SESSION['df'] is None:
+    session = get_session()
+    if session['df'] is None:
         return jsonify({'error': 'No data loaded.'}), 404
 
-    df = _apply_filters(SESSION['df'], request.args)
+    df = _apply_filters(session['df'], request.args)
 
     return jsonify(safe_json({
         'age_distribution': get_age_distribution(df),
@@ -172,18 +185,20 @@ def get_analytics():
 
 @app.route('/api/insights', methods=['GET'])
 def get_insights():
-    if SESSION['df'] is None:
+    session = get_session()
+    if session['df'] is None:
         return jsonify({'error': 'No data loaded.'}), 404
-    return jsonify(safe_json(SESSION['insights']))
+    return jsonify(safe_json(session['insights']))
 
 
 @app.route('/api/data', methods=['GET'])
 def get_data():
     """Return paginated customer table data."""
-    if SESSION['df'] is None:
+    session = get_session()
+    if session['df'] is None:
         return jsonify({'error': 'No data loaded.'}), 404
 
-    df = _apply_filters(SESSION['df'], request.args)
+    df = _apply_filters(session['df'], request.args)
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 20))
     search = request.args.get('search', '').strip().lower()
@@ -215,10 +230,11 @@ def get_data():
 
 @app.route('/api/export/excel', methods=['GET'])
 def export_excel_route():
-    if SESSION['df'] is None:
+    session = get_session()
+    if session['df'] is None:
         return jsonify({'error': 'No data loaded.'}), 404
     try:
-        data = export_excel(SESSION['df'], SESSION['segment_summary'])
+        data = export_excel(session['df'], session['segment_summary'])
         buf = __import__('io').BytesIO(data)
         return send_file(buf, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                          as_attachment=True, download_name='customer_segmentation_report.xlsx')
@@ -228,10 +244,11 @@ def export_excel_route():
 
 @app.route('/api/export/pdf', methods=['GET'])
 def export_pdf_route():
-    if SESSION['df'] is None:
+    session = get_session()
+    if session['df'] is None:
         return jsonify({'error': 'No data loaded.'}), 404
     try:
-        data = export_pdf(SESSION['df'], SESSION['segment_summary'], SESSION['kpis'])
+        data = export_pdf(session['df'], session['segment_summary'], session['kpis'])
         buf = __import__('io').BytesIO(data)
         return send_file(buf, mimetype='application/pdf',
                          as_attachment=True, download_name='customer_segmentation_report.pdf')
@@ -253,11 +270,12 @@ def load_sample():
         segment_summary = get_segment_summary(df)
         kpis['num_segments'] = len(segment_summary)
         insights = generate_insights(df)
-        SESSION['df'] = df
-        SESSION['kpis'] = kpis
-        SESSION['col_map'] = col_map
-        SESSION['insights'] = insights
-        SESSION['segment_summary'] = segment_summary
+        session = get_session()
+        session['df'] = df
+        session['kpis'] = kpis
+        session['col_map'] = col_map
+        session['insights'] = insights
+        session['segment_summary'] = segment_summary
         available_cols = list(col_map.keys())
         return jsonify({
             'success': True,
@@ -271,8 +289,9 @@ def load_sample():
 
 @app.route('/api/clear', methods=['POST'])
 def clear_data():
-    for key in SESSION:
-        SESSION[key] = None
+    session = get_session()
+    for key in session:
+        session[key] = None
     return jsonify({'success': True})
 
 

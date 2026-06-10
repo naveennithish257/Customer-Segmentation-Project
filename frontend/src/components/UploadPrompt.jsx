@@ -96,41 +96,6 @@ export default function UploadPrompt({ compact = false }) {
               ))}
             </div>
 
-            {/* Divider */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
-              <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500, whiteSpace: 'nowrap' }}>or try with sample data</span>
-              <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
-            </div>
-
-            {/* Load Sample button — always visible */}
-            <button
-              id="load-sample-btn"
-              onClick={async () => {
-                setLocalError(null)
-                const result = await loadSample()
-                if (!result.success) setLocalError(result.error)
-              }}
-              disabled={uploading}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                padding: '13px 24px',
-                background: uploading ? '#f1f5f9' : 'linear-gradient(135deg, rgba(0,212,255,0.12), rgba(124,58,237,0.12))',
-                border: '1.5px solid rgba(0,212,255,0.4)',
-                borderRadius: 12, cursor: uploading ? 'not-allowed' : 'pointer',
-                color: '#0284c7', fontWeight: 700, fontSize: 14,
-                transition: 'all 0.2s', opacity: uploading ? 0.6 : 1,
-                width: '100%',
-              }}
-              onMouseEnter={e => { if (!uploading) { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,212,255,0.22), rgba(124,58,237,0.22))'; e.currentTarget.style.borderColor = 'rgba(0,212,255,0.7)' } }}
-              onMouseLeave={e => { if (!uploading) { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,212,255,0.12), rgba(124,58,237,0.12))'; e.currentTarget.style.borderColor = 'rgba(0,212,255,0.4)' } }}
-            >
-              {uploading
-                ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                : <Database size={16} />}
-              Load Sample Dataset (200 customers)
-            </button>
-
             {err && (
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,

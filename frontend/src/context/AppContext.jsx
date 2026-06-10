@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react'
 import axios from 'axios'
+import '../utils/api'
 
 // In production (GitHub Pages), use the Render backend URL injected at build time.
 // In development, use relative /api paths so Vite proxy handles them.
