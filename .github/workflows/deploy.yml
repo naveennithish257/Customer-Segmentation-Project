@@ -5,6 +5,7 @@ on:
     branches: [master]
   workflow_dispatch:
 
+# Grant OIDC token write permissions so actions/deploy-pages can authenticate
 permissions:
   contents: read
   pages: write
@@ -24,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
@@ -40,12 +41,19 @@ jobs:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
         run: npm run build
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist
 
   deploy:
+    # Explicit permissions at job level to satisfy the OIDC token requirement
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
